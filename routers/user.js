@@ -40,12 +40,18 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
 
+    //get the username and password from body of request
     let username = req.body.username
     let password = req.body.password
+    //create a result object to hold the boolean isUser and the String userType
+    let result = new Object({isUser: false, userType: null})
+
     //step 1
     const user = await User.findOne({username: username})
     if (!user) {
-        res.redirect('/')
+        //if not a user, isUser is false and send the result back to client
+        result.isUser = false
+        res.send(result)
     }
     //step 2
     const isMatch = await bcrypt.compare(password,user.password)
@@ -53,11 +59,29 @@ router.post('/login', async (req, res) => {
     //step 3
     console.log(isMatch)
     if (isMatch){
+        //if the password matches, register their session
         req.session.user_id = user._id
-        res.redirect('/dashboard')
+        //mark results isUser to true
+        result.isUser = true
+        //check if the user is an owner or a walker
+        if (user.userType === 'owner'){
+            //if owner, mark results userType to owner and send result to client
+            result.userType = 'owner'
+            res.send(result)
+        }
+        else if (user.userType === 'walker'){
+            //if walker, mark results userType to walker and send result to client
+            result.userType = 'walker'
+            res.send(result)
+        }
+        
     }
-    else
-        res.redirect('/')
+    else{
+        //if password doesn't match, set userType to incorrect password
+        result.userType = 'Incorrect Password'
+        //send the result to the client
+        res.send(result)
+    }
 
 })
 
