@@ -25,11 +25,11 @@ async function authenticateUser(req,res,next){
 router.post('/register', async (req, res) => {
     let username = req.body.username
     let password = req.body.password
-
+    let userType = req.body.userType
 
     try {
         password = await bcrypt.hash(password,8)
-        const user = new User({username,password})
+        const user = new User({username,password,userType})
         const u = await user.save()
         console.log(u)
     } catch (e) {
