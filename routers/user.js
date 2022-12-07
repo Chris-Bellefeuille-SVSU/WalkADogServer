@@ -1,26 +1,10 @@
 const express = require("express")
 const bcrypt = require('bcrypt')
 const User = require("../models/user")
+const authenticateUser = require("../middleware/authenticate")
+const authenticateUsers = require("../middleware/authenticate")
 const router = new express.Router()
 
-async function authenticateUser(req,res,next){
-    console.log(req.session)
-    if(!req.session.user_id){
-        console.log("Unauthorized user")
-        return res.redirect('/')
-    }
-    else{
-        try {
-            const user = await User.findById(req.session.user_id)
-            req.user = user
-            next()
-        }
-        catch(e){
-            res.send(e)
-        }
-        
-    }
-}
 
 router.post('/register', async (req, res) => {
     let username = req.body.username
@@ -85,17 +69,9 @@ router.post('/login', async (req, res) => {
 
 })
 
-router.get('/dashboard', authenticateUser,async (req, res) => {
-
-  
-    res.render('dashboard.ejs',{username:req.user.username})
-
-})
-
-router.get('/topsecret', authenticateUser,async (req, res) => {
-
-   res.send(req.user)
-
+router.get('/homepage', authenticateUsers, async (req,res)=>{
+    let user_id = req.user._id
+    
 })
 
 
