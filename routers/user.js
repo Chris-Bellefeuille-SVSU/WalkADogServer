@@ -3,8 +3,90 @@ const bcrypt = require('bcrypt')
 const User = require("../models/user")
 const authenticateUser = require("../middleware/authenticate")
 const authenticateUsers = require("../middleware/authenticate")
+const Dog = require("../models/dog")
+const Walks = require("../models/walks")
 const router = new express.Router()
 
+
+router.get('/homepage/owner', authenticateUsers, async (req,res)=>{
+    //get the user id and userType from current user
+    let user_id = req.user._id
+    let userType = req.user.userType
+
+    //check if the user is a walker
+    if (userType === 'walker'){
+        //if so send an error message
+        res.send({message: 'This page can only be viewed by dog Owners!'})
+    }
+    try{
+        //run a find to find all dogs owned by current user
+        const userDogs = await Dog.find({ownerID: user_id})
+
+        //run a find to find all dogs that have outgoing walk requests owned by current user
+        const userDogRequests = await Walks.find({ownerID: user_id})
+
+        //send the two objects to the client
+        res.send({userDogs: userDogs, userDogRequests: userDogRequests})
+    }
+    catch(e){
+        res.send(e)
+    }
+    
+})
+
+router.get('/homepage/walker', authenticateUsers, async (req,res)=>{
+    //get the user id and userType from current user
+    let user_id = req.user._id
+    let userType = req.user.userType
+
+    //check if the user is a walker
+    if (userType === 'owner'){
+        //if so send an error message
+        res.send({message: 'This page can only be viewed by dog Walkers!'})
+    }
+    //otherwise proceed
+    else{
+        try{
+            //run a find to find all dogs that are assigned to current user and in progress
+            const userInProgressWalks = await Walks.find({walkerTUID: user_id, status: 'In-Progress'})
+
+            //run a find to find all dogs that are assigned to current user and completed
+            const userCompletedWalks = await Walks.find({walkerTUID: user_id, status: 'Completed'})
+
+            //send the two objects to the client
+            res.send({userInProgressWalks: userInProgressWalks, userCompletedWalks: userCompletedWalks})
+        }
+        catch(e){
+            res.send(e)
+        }
+    }
+    
+})
+
+//basically used as a fetch route used in list and map activity on client
+router.get('/availableDogs',authenticateUser,async (req,res)=>{
+    //get the userType from current user
+    let userType = req.user.userType
+
+    //check if the user is a walker
+    if (userType === 'owner'){
+        //if so send an error message
+        res.send({message: 'This page can only be viewed by dog Walkers!'})
+    }
+    //otherwise proceed
+    else{
+        try{
+            //run a find to find all walks with a status of Need a Walker
+            const availableDogs = await Walks.find({status: 'Need a Walker'})
+
+            //send the availableDogs to the client
+            res.send(availableDogs)
+        }
+        catch(e){
+            res.send(e)
+        }
+    }
+})
 
 router.post('/register', async (req, res) => {
     let username = req.body.username
@@ -69,12 +151,77 @@ router.post('/login', async (req, res) => {
 
 })
 
-router.get('/homepage', authenticateUsers, async (req,res)=>{
+router.post('/makeRequest/:name',authenticateUser,async (req,res)=>{
+    //get the user id and userType from current user
     let user_id = req.user._id
-    
+    let userType = req.user.userType
+    //get the dog name from the url
+    let dogName = req.params.name
+    //get the time from the body sent from the client
+    let time = req.body.time
+
+    //check if the user is a walker
+    if (userType === 'walker'){
+        //if so send an error message
+        res.send({message: 'This page can only be viewed by dog Owners!'})
+    }
+    //otherwise run the request
+    else{
+        //create a find to find the dog and get it's id
+        const dog = await Dog.find({name: dogName})
+
+        try{
+            //create a new walk object with the given dog name and time
+            const newWalkRequest = new Walks({
+                ownerTUID: user_id,
+                walkerTUID: null,
+                dogTUID: dog._id,
+                time: time,
+                status: 'Needs a Walker'
+            })
+
+            //now save the new walk object and send it
+            const result = await newWalkRequest.save()
+            res.send(result)
+        }
+        catch(e){
+            res.send(e)
+        }
+    }
 })
 
+router.post('/addDog',authenticateUser,async (req,res)=>{
+    //grab the name and breed sent in body of client post
+    let dogName = req.body.name
+    let dogBreed = req.body.breed
+    //get the user id and user type from current user
+    let user_id = req.user._id
+    let userType = req.user.userType
 
+    //check if the user is a walker
+    if (userType === 'walker'){
+        //if so send an error message
+        res.send({message: 'This page can only be viewed by dog Owners!'})
+    }
+    //otherwise create and send the new dog
+    else{
+        try {
+            //create a dog object with the given dog name and breed
+            const newDog = new Dog({
+                ownerTUID: user_id,
+                name: dogName,
+                breed: dogBreed
+            })
+
+            //now save the new dog and send it
+            const result = await newDog.save()
+            res.send(result)
+        } 
+        catch (e) {
+            res.send(e)
+        }
+    }
+})
 
 
 router.post('/logout',authenticateUser,(req,res)=>{
