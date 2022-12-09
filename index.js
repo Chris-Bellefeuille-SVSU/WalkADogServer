@@ -4,7 +4,7 @@ const path = require('path')
 const mongoose = require('mongoose')
 const session = require('express-session')
 const MongoStore = require('connect-mongo')
-const UserRouter = require('../routers/user')
+const UserRouter = require('./routers/user')
 
 
 const app = express()
