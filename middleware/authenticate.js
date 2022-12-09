@@ -1,4 +1,4 @@
-const User = require('../models/user.js')
+const User = require('../models/user')
 
 //middleware function to authenticate users
 async function authenticateUsers(req,res,next){

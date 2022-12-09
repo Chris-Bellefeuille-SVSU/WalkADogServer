@@ -5,7 +5,7 @@ const walksSchema = new  mongoose.Schema({
     ownerTUID:{type:mongoose.Schema.Types.ObjectId, ref:'User'},
     walkerTUID:{type:mongoose.Schema.Types.ObjectId, ref:'User'},
     dogTUID:{type:mongoose.Schema.Types.ObjectId, ref:'Dog'},
-    time:{type:Int32, required:true},
+    time:{type:Number, required:true},
     status:{type:String, requred:true}
 })
 
