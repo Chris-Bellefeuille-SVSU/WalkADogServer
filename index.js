@@ -5,8 +5,7 @@ const mongoose = require('mongoose')
 const session = require('express-session')
 const MongoStore = require('connect-mongo')
 const UserRouter = require('./routers/user.js')
-const DogRouter = require('./routers/dog.js')
-const WalksRouter = require('./routers/walks.js')
+
 
 const app = express()
 const port = process.env.PORT
@@ -44,8 +43,6 @@ app.use(session({
 }))
 
 app.use(UserRouter)
-app.use(DogRouter)
-app.use(WalksRouter)
 
 
 app.get('/', (req, res) => {
