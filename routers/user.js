@@ -92,16 +92,28 @@ router.post('/register', async (req, res) => {
     let username = req.body.username
     let password = req.body.password
     let userType = req.body.userType
+    let isUser = false
 
-    try {
-        password = await bcrypt.hash(password,8)
-        const user = new User({username,password,userType})
-        const u = await user.save()
-        console.log(u)
-    } catch (e) {
-        console.log(e)
+    const user = await User.findOne({username: username})
+    if (user) {
+        //if already a user, isUser is true and send the result back to client
+        isUser = true
+        let message = "Username is already taken!"
+        res.send({isUser: isUser,message:message})
+        
+    } else {
+
+        try {
+            password = await bcrypt.hash(password,8)
+            const user = new User({username,password,userType})
+            const u = await user.save()
+            console.log(u)
+        } catch (e) {
+            console.log(e)
+        }
+        let message = "Account successfully created!"
+        res.send({message: message,isUser: isUser})
     }
-    res.redirect('/')
 })
 
 router.post('/login', async (req, res) => {
