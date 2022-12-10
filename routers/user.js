@@ -8,17 +8,17 @@ const Walks = require("../models/walks")
 const router = new express.Router()
 
 
-router.get('/homepage/owner', authenticateUsers, async (req,res)=>{
-    //get the user id and userType from current user
-    let user_id = req.user._id
-    let userType = req.user.userType
+router.get('/homepage/owner/:username', async (req,res)=>{
+    //get the username from the passed in params
+    let username= req.params.username
 
-    //check if the user is a walker
-    if (userType === 'walker'){
-        //if so send an error message
-        res.send({message: 'This page can only be viewed by dog Owners!'})
-    }
     try{
+        //run a find to find the user logged in
+        const user = await User.findOne({username: username})
+
+        //get user id from the user
+        let user_id = user._id
+
         //run a find to find all dogs owned by current user
         const userDogs = await Dog.find({ownerID: user_id})
 
@@ -34,33 +34,29 @@ router.get('/homepage/owner', authenticateUsers, async (req,res)=>{
     
 })
 
-router.get('/homepage/walker', authenticateUsers, async (req,res)=>{
-    //get the user id and userType from current user
-    let user_id = req.user._id
-    let userType = req.user.userType
+router.get('/homepage/walker/:username', async (req,res)=>{
+    //get the username from the passed in params
+    let username= req.params.username
 
-    //check if the user is a walker
-    if (userType === 'owner'){
-        //if so send an error message
-        res.send({message: 'This page can only be viewed by dog Walkers!'})
+    try{
+        //run a find to find the user logged in
+        const user = await User.findOne({username: username})
+
+        //get user id from the user
+        let user_id = user._id
+
+        //run a find to find all dogs that are assigned to current user and in progress
+        const userInProgressWalks = await Walks.find({walkerTUID: user_id, status: 'In-Progress'})
+
+        //run a find to find all dogs that are assigned to current user and completed
+        const userCompletedWalks = await Walks.find({walkerTUID: user_id, status: 'Completed'})
+
+        //send the two objects to the client
+        res.send({userInProgressWalks: userInProgressWalks, userCompletedWalks: userCompletedWalks})
     }
-    //otherwise proceed
-    else{
-        try{
-            //run a find to find all dogs that are assigned to current user and in progress
-            const userInProgressWalks = await Walks.find({walkerTUID: user_id, status: 'In-Progress'})
-
-            //run a find to find all dogs that are assigned to current user and completed
-            const userCompletedWalks = await Walks.find({walkerTUID: user_id, status: 'Completed'})
-
-            //send the two objects to the client
-            res.send({userInProgressWalks: userInProgressWalks, userCompletedWalks: userCompletedWalks})
-        }
-        catch(e){
-            res.send(e)
-        }
-    }
-    
+    catch(e){
+        res.send(e)
+    }  
 })
 
 //basically used as a fetch route used in list and map activity on client
@@ -99,7 +95,7 @@ router.post('/register', async (req, res) => {
         //if already a user, isUser is true and send the result back to client
         isUser = true
         let message = "Username is already taken!"
-        res.send({isUser: isUser,message:message})
+        res.send({isUser: isUser,message:message,username:username})
         
     } else {
 
@@ -112,7 +108,7 @@ router.post('/register', async (req, res) => {
             console.log(e)
         }
         let message = "Account successfully created!"
-        res.send({message: message,isUser: isUser})
+        res.send({isUser: isUser,message:message,username:username})
     }
 })
 
@@ -122,7 +118,7 @@ router.post('/login', async (req, res) => {
     let username = req.body.username
     let password = req.body.password
     //create a result object to hold the boolean isUser and the String userType
-    let result = new Object({isUser: false, userType: null})
+    let result = new Object({isUser: false, userType: null,username:username})
 
     //step 1
     const user = await User.findOne({username: username})
