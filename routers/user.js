@@ -1,8 +1,6 @@
 const express = require("express")
 const bcrypt = require('bcrypt')
 const User = require("../models/user")
-const authenticateUser = require("../middleware/authenticate")
-const authenticateUsers = require("../middleware/authenticate")
 const Dog = require("../models/dog")
 const Walks = require("../models/walks")
 const router = new express.Router()
@@ -60,27 +58,16 @@ router.get('/homepage/walker/:username', async (req,res)=>{
 })
 
 //basically used as a fetch route used in list and map activity on client
-router.get('/availableDogs',authenticateUser,async (req,res)=>{
-    //get the userType from current user
-    let userType = req.user.userType
+router.get('/availableDogs/',async (req,res)=>{
+    try{
+        //run a find to find all walks with a status of Needs a Walker
+        const availableDogs = await Walks.find({status: 'Needs a Walker'})
 
-    //check if the user is a walker
-    if (userType === 'owner'){
-        //if so send an error message
-        res.send({message: 'This page can only be viewed by dog Walkers!'})
+        //send the availableDogs to the client
+        res.send(availableDogs)
     }
-    //otherwise proceed
-    else{
-        try{
-            //run a find to find all walks with a status of Need a Walker
-            const availableDogs = await Walks.find({status: 'Need a Walker'})
-
-            //send the availableDogs to the client
-            res.send(availableDogs)
-        }
-        catch(e){
-            res.send(e)
-        }
+    catch(e){
+        res.send(e)
     }
 })
 
@@ -133,8 +120,6 @@ router.post('/login', async (req, res) => {
     //step 3
     console.log(isMatch)
     if (isMatch){
-        //if the password matches, register their session
-        req.session.user_id = user._id
         //mark results isUser to true
         result.isUser = true
         //check if the user is an owner or a walker
@@ -159,80 +144,90 @@ router.post('/login', async (req, res) => {
 
 })
 
-router.post('/makeRequest/:name',authenticateUser,async (req,res)=>{
-    //get the user id and userType from current user
-    let user_id = req.user._id
-    let userType = req.user.userType
+router.post('/takeRequest/:username/:name', async (req,res)=>{
+    //get username and dog name from params
+    let username = req.params.username
+    let dogName = req.params.name
+
+    try {
+        //find the dog the user is taking
+        const dog = await Dog.findOne({name: dogName})
+
+        //find the user
+        const user = await User.findOne({username: username})
+
+        //update the walk request's ownerTUID and status
+        await Walks.updateOne({dogTUID: dog._id},{ownerTUID: user._id,status: 'In-Progress'})
+    } 
+    catch (error) {
+        res.send(error)
+    }
+})
+
+router.post('/makeRequest/:username/:name',async (req,res)=>{
     //get the dog name from the url
     let dogName = req.params.name
     //get the time from the body sent from the client
     let time = req.body.time
 
-    //check if the user is a walker
-    if (userType === 'walker'){
-        //if so send an error message
-        res.send({message: 'This page can only be viewed by dog Owners!'})
-    }
-    //otherwise run the request
-    else{
+    try{
+        //find the user from params
+        const user = await User.findOne({username: req.params.username})
+
+        let user_id = user._id
+    
         //create a find to find the dog and get it's id
-        const dog = await Dog.find({name: dogName})
+        const dog = await Dog.findOne({name: dogName})
 
-        try{
-            //create a new walk object with the given dog name and time
-            const newWalkRequest = new Walks({
-                ownerTUID: user_id,
-                walkerTUID: null,
-                dogTUID: dog._id,
-                time: time,
-                status: 'Needs a Walker'
-            })
+        let dog_id = dog._id
 
-            //now save the new walk object and send it
-            const result = await newWalkRequest.save()
-            res.send(result)
-        }
-        catch(e){
-            res.send(e)
-        }
+        //create a new walk object with the given dog name and time
+        const newWalkRequest = new Walks({
+            ownerTUID: user_id,
+            walkerTUID: null,
+            dogTUID: dog_id,
+            time: time,
+            status: 'Needs a Walker'
+        })
+
+        //now save the new walk object and send it
+        const result = await newWalkRequest.save()
+        res.send(result)
+    }
+    catch(e){
+        res.send(e)
     }
 })
 
-router.post('/addDog',authenticateUser,async (req,res)=>{
+router.post('/addDog/:username',async (req,res)=>{
     //grab the name and breed sent in body of client post
     let dogName = req.body.name
     let dogBreed = req.body.breed
-    //get the user id and user type from current user
-    let user_id = req.user._id
-    let userType = req.user.userType
+    
+    //find the user from params
+    const user = await User.findOne({username: req.params.username})
 
-    //check if the user is a walker
-    if (userType === 'walker'){
-        //if so send an error message
-        res.send({message: 'This page can only be viewed by dog Owners!'})
-    }
-    //otherwise create and send the new dog
-    else{
-        try {
-            //create a dog object with the given dog name and breed
-            const newDog = new Dog({
-                ownerTUID: user_id,
-                name: dogName,
-                breed: dogBreed
-            })
+    let user_id = user._id
 
-            //now save the new dog and send it
-            const result = await newDog.save()
-            res.send(result)
-        } 
-        catch (e) {
-            res.send(e)
-        }
+    try {
+        //create a dog object with the given dog name and breed
+        const newDog = new Dog({
+            ownerTUID: user_id,
+            name: dogName,
+            breed: dogBreed
+        })
+
+        //now save the new dog and send it
+        const result = await newDog.save()
+        res.send(result)
+    } 
+    catch (e) {
+        res.send(e)
     }
 })
 
 
-router.post('/logout',authenticateUser,(req,res)=>{
+router.post('/logout',(req,res)=>{
     req.session.destroy(()=>{
         console.log("Logged out successfully.")
         res.redirect('/')
