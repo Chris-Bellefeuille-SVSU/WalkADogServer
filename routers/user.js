@@ -35,6 +35,9 @@ router.get('/homepage/owner/:username', async (req,res)=>{
 router.get('/homepage/walker/:username', async (req,res)=>{
     //get the username from the passed in params
     let username= req.params.username
+    //create array for the times
+    let inProgressTimes = []
+    let completedTimes = []
 
     try{
         //run a find to find the user logged in
@@ -43,14 +46,30 @@ router.get('/homepage/walker/:username', async (req,res)=>{
         //get user id from the user
         let user_id = user._id
 
-        //run a find to find all dogs that are assigned to current user and in progress
+        //run a find to find all walks that are assigned to current user and in progress
         const userInProgressWalks = await Walks.find({walkerTUID: user_id, status: 'In-Progress'})
 
-        //run a find to find all dogs that are assigned to current user and completed
+        for (let i = 0; i < userInProgressWalks.length; i++){
+            const currentWalk = await Walks.findOne({_id: userInProgressWalks[i]._id})
+            inProgressTimes.push(currentWalk.time)
+        }
+
+        //find dogs associated with the walks
+        const inProgressDogs = await Dog.find({dogTUID: userInProgressWalks})
+
+        //run a find to find all wals that are assigned to current user and completed
         const userCompletedWalks = await Walks.find({walkerTUID: user_id, status: 'Completed'})
 
-        //send the two objects to the client
-        res.send({userInProgressWalks: userInProgressWalks, userCompletedWalks: userCompletedWalks})
+        for (let i = 0; i < userCompletedWalks.length; i++){
+            const currentWalk = await Walks.findOne({_id: userInProgressWalks[i]._id})
+            completedTimes.push(currentWalk.time)
+        }
+
+        //find dogs associated with the walks
+        const completedDogs = await Dog.find({dogTUID: userCompletedWalks})
+
+        //send the in progress and completed dogs along with the times of each to the client
+        res.send({userInProgressWalks: inProgressDogs, inProgressTimes: inProgressTimes, userCompletedWalks: completedDogs, completedTimes: completedTimes})
     }
     catch(e){
         res.send(e)
@@ -158,7 +177,10 @@ router.post('/takeRequest/:username/:name', async (req,res)=>{
 
         //update the walk request's ownerTUID and status
         await Walks.updateOne({dogTUID: dog._id},{ownerTUID: user._id})
-        await Walks.updateOne({dogTUID: dog._id},{status: 'In-Progress'})
+        let updatedWalk = await Walks.updateOne({dogTUID: dog._id},{status: 'In-Progress'})
+
+        //send the updated walk
+        res.send(updatedWalk)
     } 
     catch (error) {
         res.send(error)
