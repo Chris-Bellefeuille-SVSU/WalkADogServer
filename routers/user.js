@@ -157,7 +157,8 @@ router.post('/takeRequest/:username/:name', async (req,res)=>{
         const user = await User.findOne({username: username})
 
         //update the walk request's ownerTUID and status
-        await Walks.updateOne({dogTUID: dog._id},{ownerTUID: user._id,status: 'In-Progress'})
+        await Walks.updateOne({dogTUID: dog._id},{ownerTUID: user._id})
+        await Walks.updateOne({dogTUID: dog._id},{status: 'In-Progress'})
     } 
     catch (error) {
         res.send(error)
