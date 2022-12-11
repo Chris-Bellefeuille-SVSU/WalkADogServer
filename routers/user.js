@@ -65,7 +65,7 @@ router.get('/homepage/walker/:username', async (req,res)=>{
         })
 
         //send the in progress and completed dogs along with the times of each to the client
-        res.send({userInProgressWalks: userInProgressWalks, inProgressTimes: inProgressTimes, userCompletedWalks: userCompletedWalks, completedTimes: completedTimes, dogs: dogs})
+        res.send({userInProgressWalks: userInProgressWalks, userCompletedWalks: userCompletedWalks, dogs: dogs})
     }
     catch(e){
         res.send(e)
