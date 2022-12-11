@@ -1,4 +1,3 @@
-const { Int32 } = require('mongodb')
 const mongoose = require('mongoose')
 
 const walksSchema = new  mongoose.Schema({
@@ -6,9 +5,9 @@ const walksSchema = new  mongoose.Schema({
     walkerTUID:{type:mongoose.Schema.Types.ObjectId, ref:'User'},
     dogTUID:{type:mongoose.Schema.Types.ObjectId, ref:'dog'},
     time:{type:Number, required:true},
-    status:{type:String, requred:true},
-    lat:{type:Number, required:true},
-    lon: {type:Number, required:true}
+    status:{type:String, required:true},
+    lat:{type:Number, required: true, default: null},
+    lon: {type:Number, required: true, default: null}
 })
 
 

@@ -86,6 +86,22 @@ router.get('/availableDogs/',async (req,res)=>{
     }
 })
 
+router.get('/ownersDogs/:username',async (req,res)=>{
+    try{
+        //find the user based on the params
+        const user = await User.findOne({username: req.params.username})
+
+        //run a find to find all walks with a status of Needs a Walker
+        const ownersDogs = await Walks.find({ownerTUID: user._id})
+
+        //send the ownersDogs to the client
+        res.send(ownersDogs)
+    }
+    catch(e){
+        res.send(e)
+    }
+})
+
 router.post('/register', async (req, res) => {
     let username = req.body.username
     let password = req.body.password
@@ -229,9 +245,12 @@ router.post('/deleteCompleted/:name', async (req,res)=>{
     }
 })
 
-router.post('/makeRequest/:username/:name',async (req,res)=>{
+router.post('/makeRequest/:username',async (req,res)=>{
     //get the dog name from the url
-    let dogName = req.params.name
+    let dogName = req.body.dogName
+    //get the lat and lon from the body of client
+    let lat = req.body.lat
+    let lon = req.body.lon
     //get the time from the body sent from the client
     let time = req.body.time
 
@@ -252,7 +271,9 @@ router.post('/makeRequest/:username/:name',async (req,res)=>{
             walkerTUID: null,
             dogTUID: dog_id,
             time: time,
-            status: 'Needs a Walker'
+            status: 'Needs a Walker',
+            lat: lat,
+            lon: lon
         })
 
         //now save the new walk object and send it
