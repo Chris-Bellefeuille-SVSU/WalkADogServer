@@ -73,13 +73,16 @@ router.get('/homepage/walker/:username', async (req,res)=>{
 })
 
 //basically used as a fetch route used in list and map activity on client
-router.get('/availableDogs/',async (req,res)=>{
+router.get('/availableDogs',async (req,res)=>{
     try{
         //run a find to find all walks with a status of Needs a Walker
-        const availableDogs = await Walks.find({status: 'Needs a Walker'})
+        const availableWalks = await Walks.find({status: 'Needs a Walker'})
+
+        //find all of the dogs
+        const dogs = await Dog.find({})
 
         //send the availableDogs to the client
-        res.send(availableDogs)
+        res.send({availableWalks: availableWalks, dogs: dogs})
     }
     catch(e){
         res.send(e)
