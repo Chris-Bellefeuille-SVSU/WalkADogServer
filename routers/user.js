@@ -6,6 +6,22 @@ const Walks = require("../models/walks")
 const router = new express.Router()
 
 
+router.get('/getEverything', async (req,res)=>{
+    try {
+        //run a find to find all dogs owned by current user
+        const allDogs = await Dog.find({})
+
+        //run a find to find all dogs that have outgoing walk requests owned by current user
+        const allDogRequests = await Walks.find({})
+
+        //send the two objects to the client
+        res.send({allDogs: allDogs, allDogRequests: allDogRequests})
+    } catch (error) {
+        res.send(error)
+    }
+})
+
+
 router.get('/homepage/owner/:username', async (req,res)=>{
     //get the username from the passed in params
     let username= req.params.username
