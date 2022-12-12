@@ -61,7 +61,7 @@ router.get('/homepage/walker/:username', async (req,res)=>{
 
         //for each to get each walk time to send to the client
         userCompletedWalks.forEach(completedWalk =>{
-            userCompletedWalks.push(completedWalk.time)
+            completedTimes.push(completedWalk.time)
         })
 
         //send the in progress and completed dogs along with the times of each to the client
