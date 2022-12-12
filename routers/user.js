@@ -18,10 +18,10 @@ router.get('/homepage/owner/:username', async (req,res)=>{
         let user_id = user._id
 
         //run a find to find all dogs owned by current user
-        const userDogs = await Dog.find({ownerID: user_id})
+        const userDogs = await Dog.find({ownerTUID: user_id})
 
         //run a find to find all dogs that have outgoing walk requests owned by current user
-        const userDogRequests = await Walks.find({ownerID: user_id})
+        const userDogRequests = await Walks.find({ownerTUID: user_id})
 
         //send the two objects to the client
         res.send({userDogs: userDogs, userDogRequests: userDogRequests})
@@ -138,8 +138,8 @@ router.post('/login', async (req, res) => {
     //get the username and password from body of request
     let username = req.body.username
     let password = req.body.password
-    //create a result object to hold the boolean isUser and the String userType
-    let result = new Object({isUser: false, userType: null,username:username})
+    //create a result object to hold the boolean isUser, the String userType, and username
+    let result = new Object({isUser: false, userType: null, username:username})
 
     //step 1
     const user = await User.findOne({username: username})
@@ -220,29 +220,7 @@ router.post('/completeWalk/:name', async (req,res)=>{
         const newWalk = await Walks.findOne({dogTUID: dog_id})
 
         //send the new walk object
-        res.send({completedWalk: newWalk})
-    } catch (error) {
-        res.send(error)
-    }
-})
-
-router.post('/deleteCompleted/:name', async (req,res)=>{
-    //get the dog name from the url
-    let dogName = req.params.name
-
-    try {
-        //find the dog from params
-        const dog = await Dog.findOne({name: dogName})
-        let dog_id = dog._id
-
-        //update the walker TUID to null
-        await Walks.updateOne({dogTUID: dog_id},{walkerTUID: null})
-
-        //find the updated walk
-        const newWalk = await Walks.findOne({dogTUID: dog_id})
-
-        //send the new walk object
-        res.send({newWalk: newWalk})
+        res.send({newWalk})
     } catch (error) {
         res.send(error)
     }
@@ -313,14 +291,6 @@ router.post('/addDog/:username',async (req,res)=>{
     catch (e) {
         res.send(e)
     }
-})
-
-
-router.post('/logout',(req,res)=>{
-    req.session.destroy(()=>{
-        console.log("Logged out successfully.")
-        res.redirect('/')
-    })
 })
 
 module.exports = router
